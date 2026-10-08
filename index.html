@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Textile Dye Ratio Mixer</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-fuchsia-50 min-h-screen">
+<div class="max-w-5xl mx-auto p-4">
+  <header class="text-center py-6">
+    <h1 class="text-3xl font-bold text-fuchsia-900">🧶 Textile Dye Ratio Mixer</h1>
+    <p class="text-fuchsia-700 mt-1">Calculate dye bath concentrations, predict color blends & document reproducible recipes</p>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Dye Mixer -->
+    <div class="space-y-4">
+      <div class="bg-white rounded-2xl shadow p-5 border border-fuchsia-200">
+        <h2 class="font-semibold text-fuchsia-800 mb-4">Dye Bath Mixer</h2>
+        <div class="space-y-3">
+          <div>
+            <label class="text-xs font-medium text-gray-600">Recipe Name</label>
+            <input id="recipeName" type="text" placeholder="e.g. Coral Sunset" class="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-xs font-medium text-gray-600">Fiber Weight (g)</label>
+              <input id="fiberWeight" type="number" value="100" min="1" oninput="recalculate()" class="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400">
+            </div>
+            <div>
+              <label class="text-xs font-medium text-gray-600">Water Volume (L)</label>
+              <input id="waterVolume" type="number" value="4" min="0.1" step="0.1" oninput="recalculate()" class="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-xs font-medium text-gray-600">Fiber Type</label>
+              <select id="fiberType" onchange="recalculate()" class="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400">
+                <option value="wool">Wool</option>
+                <option value="cotton">Cotton</option>
+                <option value="silk">Silk</option>
+                <option value="linen">Linen/Flax</option>
+                <option value="nylon">Nylon</option>
+                <option value="polyester">Polyester (disperse)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs font-medium text-gray-600">Mordant</label>
+              <select id="mordant" class="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400">
+                <option value="none">None</option>
+                <option value="alum">Alum (KAl)</option>
+                <option value="iron">Iron (FeSO₄)</option>
+                <option value="copper">Copper (CuSO₄)</option>
+                <option value="tannin">Tannin</option>
+              </select>
+            </div>
+          </div>
+
+          <hr class="border-fuchsia-100">
+
+          <!-- Dye Components -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-xs font-semibold text-fuchsia-700">Dye Components</label>
+              <button onclick="addDyeComponent()" class="text-xs bg-fuchsia-100 hover:bg-fuchsia-200 text-fuchsia-700 px-3 py-1 rounded-full">+ Add Dye</button>
+            </div>
+            <div id="dyeComponents" class="space-y-2"></div>
+          </div>
+
+          <div>
+            <label class="text-xs font-medium text-gray-600">Temperature (°C)</label>
+            <input id="temperature" type="number" value="85" min="20" max="100" oninput="recalculate()" class="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400">
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">pH Adjuster</label>
+            <select id="phAdjuster" onchange="recalculate()" class="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400">
+              <option value="none">None (neutral)</option>
+              <option value="vinegar">White Vinegar (acid)</option>
+              <option value="citric">Citric Acid</option>
+              <option value="soda_ash">Soda Ash (alkaline)</option>
+              <option value="sodium_sulfate">Sodium Sulfate</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Notes</label>
+            <textarea id="recipeNotes" rows="2" placeholder="Process notes, swatch description..." class="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-400"></textarea>
+          </div>
+          <button onclick="saveRecipe()" class="w-full bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-semibold py-2 rounded-lg transition">💾 Save Recipe</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Color Preview & Results -->
+    <div class="space-y-4">
+      <div class="bg-white rounded-2xl shadow p-5 border border-fuchsia-200">
+        <h2 class="font-semibold text-fuchsia-800 mb-3">Color Preview</h2>
+        <div id="colorPreview" class="h-32 rounded-xl mb-3 flex items-center justify-center text-white font-bold text-lg shadow-inner bg-gray-200">
+          Mix dyes to preview
+        </div>
+        <div id="colorInfo" class="text-xs text-gray-500 space-y-1"></div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow p-5 border border-fuchsia-200">
+        <h2 class="font-semibold text-fuchsia-800 mb-3">Dye Bath Calculations</h2>
+        <div id="bathCalcs" class="space-y-2 text-sm"></div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow p-5 border border-fuchsia-200">
+        <h2 class="font-semibold text-fuchsia-800 mb-3">Color Theory</h2>
+        <div id="colorTheory" class="space-y-2 text-sm"></div>
+      </div>
+    </div>
+
+    <!-- Saved Recipes -->
+    <div class="space-y-4">
+      <div class="bg-white rounded-2xl shadow p-5 border border-fuchsia-200">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-semibold text-fuchsia-800">Saved Recipes</h2>
+          <span id="recipeCount" class="text-xs text-gray-400">0 recipes</span>
+        </div>
+        <div id="savedRecipes" class="space-y-3 max-h-96 overflow-y-auto"></div>
+      </div>
+
+      <!-- Shade Variations -->
+      <div class="bg-white rounded-2xl shadow p-5 border border-fuchsia-200">
+        <h2 class="font-semibold text-fuchsia-800 mb-3">Shade Variations</h2>
+        <p class="text-xs text-gray-500 mb-3">Predicted shades at different % OWF (On Weight of Fiber)</p>
+        <div id="shadeVariations"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Fiber dye affinity multipliers
+const FIBER_AFFINITY = {
+  wool: 1.0, cotton: 0.7, silk: 0.95, linen: 0.65, nylon: 0.85, polyester: 0.6
+};
+
+const MORDANT_SHIFT = {
+  none: { factor: 1.0, hueShift: 0 },
+  alum: { factor: 1.1, hueShift: 0 },
+  iron: { factor: 0.85, hueShift: 40 }, // darker, shifts to grayer
+  copper: { factor: 1.0, hueShift: 30 }, // green shift
+  tannin: { factor: 0.9, hueShift: 10 },
+};
+
+let dyeComponents = [];
+let recipes = JSON.parse(localStorage.getItem('dye_recipes') || '[]');
+
+function save() { localStorage.setItem('dye_recipes', JSON.stringify(recipes)); }
+
+// Initialize with default dye
+dyeComponents = [
+  { id: '1', name: 'Primary Dye', color: '#e91e8c', owf: 2.0 },
+];
+renderDyeComponents();
+
+function addDyeComponent() {
+  dyeComponents.push({ id: Date.now().toString(), name: '', color: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6,'0'), owf: 1.0 });
+  renderDyeComponents();
+}
+
+function removeDye(id) {
+  dyeComponents = dyeComponents.filter(d => d.id !== id);
+  renderDyeComponents();
+}
+
+function renderDyeComponents() {
+  document.getElementById('dyeComponents').innerHTML = dyeComponents.map(d => `
+    <div class="flex items-center gap-2 bg-fuchsia-50 rounded-xl p-2">
+      <input type="color" value="${d.color}" onchange="updateDye('${d.id}','color',this.value)" class="h-8 w-8 rounded cursor-pointer border-0">
+      <input type="text" value="${d.name}" placeholder="Dye name" onchange="updateDye('${d.id}','name',this.value)"
+        class="flex-1 text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-fuchsia-400">
+      <div class="shrink-0">
+        <span class="text-xs text-gray-400">%OWF</span>
+        <input type="number" value="${d.owf}" min="0.1" max="20" step="0.1" onchange="updateDye('${d.id}','owf',parseFloat(this.value))"
+          class="w-14 text-xs border border-gray-200 rounded px-2 py-1 ml-1 focus:outline-none focus:ring-1 focus:ring-fuchsia-400">
+      </div>
+      <button onclick="removeDye('${d.id}')" class="text-gray-300 hover:text-red-400">✕</button>
+    </div>`).join('');
+  recalculate();
+}
+
+function updateDye(id, field, value) {
+  const dye = dyeComponents.find(d => d.id === id);
+  if (dye) { dye[field] = value; recalculate(); }
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return { r, g, b };
+}
+
+function rgbToHex(r, g, b) {
+  return '#' + [r,g,b].map(v => Math.min(255, Math.max(0, Math.round(v))).toString(16).padStart(2,'0')).join('');
+}
+
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b);
+  let h, s, l = (max+min)/2;
+  if (max === min) { h = s = 0; }
+  else {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch(max) {
+      case r: h = ((g-b)/d + (g<b?6:0)) / 6; break;
+      case g: h = ((b-r)/d + 2) / 6; break;
+      case b: h = ((r-g)/d + 4) / 6; break;
+    }
+  }
+  return { h: h*360, s: s*100, l: l*100 };
+}
+
+function blendColors() {
+  if (dyeComponents.length === 0) return '#cccccc';
+  const totalOwf = dyeComponents.reduce((s, d) => s + d.owf, 0);
+  if (totalOwf === 0) return '#cccccc';
+
+  let r = 0, g = 0, b = 0;
+  dyeComponents.forEach(d => {
+    const rgb = hexToRgb(d.color);
+    const w = d.owf / totalOwf;
+    // Subtractive color mixing simulation
+    r += rgb.r * w;
+    g += rgb.g * w;
+    b += rgb.b * w;
+  });
+
+  // Apply mordant shift
+  const mordant = document.getElementById('mordant').value;
+  const mShift = MORDANT_SHIFT[mordant];
+  const factor = mShift.factor;
+
+  // Apply concentration (darker at higher %OWF)
+  const concFactor = Math.min(1, 0.3 + totalOwf / 8);
+
+  const finalR = 255 - (255 - r) * factor * concFactor;
+  const finalG = 255 - (255 - g) * factor * concFactor;
+  const finalB = 255 - (255 - b) * factor * concFactor;
+
+  return rgbToHex(finalR, finalG, finalB);
+}
+
+function recalculate() {
+  const fiberWeight = parseFloat(document.getElementById('fiberWeight').value) || 100;
+  const waterVolume = parseFloat(document.getElementById('waterVolume').value) || 4;
+  const fiberType = document.getElementById('fiberType').value;
+  const affinity = FIBER_AFFINITY[fiberType] || 1.0;
+
+  const blendedColor = blendColors();
+  const hsl = rgbToHsl(...hexToRgb(blendedColor).r === undefined ? [0,0,0] : [hexToRgb(blendedColor).r, hexToRgb(blendedColor).g, hexToRgb(blendedColor).b]);
+
+  // Update color preview
+  const preview = document.getElementById('colorPreview');
+  preview.style.background = blendedColor;
+  preview.textContent = blendedColor.toUpperCase();
+  preview.style.color = hsl.l > 60 ? '#333' : '#fff';
+
+  const rgb = hexToRgb(blendedColor);
+  document.getElementById('colorInfo').innerHTML = `
+    <div class="flex gap-3 flex-wrap">
+      <span>HEX: <strong>${blendedColor.toUpperCase()}</strong></span>
+      <span>RGB: <strong>${rgb.r},${rgb.g},${rgb.b}</strong></span>
+      <span>HSL: <strong>${Math.round(hsl.h)}°,${Math.round(hsl.s)}%,${Math.round(hsl.l)}%</strong></span>
+    </div>`;
+
+  // Bath calculations
+  const bathCalcs = document.getElementById('bathCalcs');
+  const totalOwf = dyeComponents.reduce((s, d) => s + d.owf, 0);
+
+  bathCalcs.innerHTML = `
+    <div class="space-y-2">
+      <div class="bg-fuchsia-50 rounded-lg p-3">
+        <p class="text-xs font-semibold text-fuchsia-700 mb-2">Dye Amounts (for ${fiberWeight}g fiber):</p>
+        ${dyeComponents.map(d => {
+          const grams = (d.owf / 100) * fiberWeight * affinity;
+          return `<div class="flex justify-between text-xs"><span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full inline-block" style="background:${d.color}"></span>${d.name || 'Dye'}</span><strong>${grams.toFixed(2)} g</strong></div>`;
+        }).join('')}
+        <div class="flex justify-between text-xs mt-1 pt-1 border-t border-fuchsia-200">
+          <span>Total Dye</span><strong>${((totalOwf/100)*fiberWeight*affinity).toFixed(2)} g</strong>
+        </div>
+      </div>
+      <div class="bg-gray-50 rounded-lg p-3 text-xs space-y-1">
+        <div class="flex justify-between"><span>Water:</span><strong>${waterVolume} L</strong></div>
+        <div class="flex justify-between"><span>Liquor Ratio:</span><strong>1:${(waterVolume*1000/fiberWeight).toFixed(0)}</strong></div>
+        <div class="flex justify-between"><span>Dye Concentration:</span><strong>${((totalOwf/100)*fiberWeight*affinity/(waterVolume*1000)*1000).toFixed(3)} g/L</strong></div>
+        <div class="flex justify-between"><span>Temp:</span><strong>${document.getElementById('temperature').value}°C</strong></div>
+        ${document.getElementById('phAdjuster').value !== 'none' ? `<div class="flex justify-between"><span>pH Adjuster:</span><strong>${document.getElementById('phAdjuster').options[document.getElementById('phAdjuster').selectedIndex].text}</strong></div>` : ''}
+      </div>
+    </div>`;
+
+  renderColorTheory(hsl, blendedColor);
+  renderShadeVariations(fiberWeight, affinity);
+}
+
+function renderColorTheory(hsl, hex) {
+  const container = document.getElementById('colorTheory');
+  const h = hsl.h;
+
+  // Complementary
+  const compH = (h + 180) % 360;
+  // Triadic
+  const tri1H = (h + 120) % 360;
+  const tri2H = (h + 240) % 360;
+
+  function hslToHex(h, s, l) {
+    s /= 100; l /= 100;
+    const k = n => (n + h/30) % 12;
+    const a = s * Math.min(l, 1-l);
+    const f = n => l - a * Math.max(-1, Math.min(k(n)-3, 9-k(n), 1));
+    return rgbToHex(f(0)*255, f(8)*255, f(4)*255);
+  }
+
+  const compColor = hslToHex(compH, hsl.s, hsl.l);
+  const tri1Color = hslToHex(tri1H, hsl.s, hsl.l);
+  const tri2Color = hslToHex(tri2H, hsl.s, hsl.l);
+  const analogColor = hslToHex((h + 30) % 360, hsl.s, hsl.l);
+
+  container.innerHTML = `
+    <div>
+      <p class="text-xs font-semibold text-gray-500 mb-2">Complementary Pair:</p>
+      <div class="flex gap-2">
+        <div class="flex-1 h-8 rounded-lg" style="background:${hex}"></div>
+        <div class="flex-1 h-8 rounded-lg" style="background:${compColor}"></div>
+      </div>
+    </div>
+    <div>
+      <p class="text-xs font-semibold text-gray-500 mb-2">Triadic Harmony:</p>
+      <div class="flex gap-2">
+        <div class="flex-1 h-8 rounded-lg" style="background:${hex}"></div>
+        <div class="flex-1 h-8 rounded-lg" style="background:${tri1Color}"></div>
+        <div class="flex-1 h-8 rounded-lg" style="background:${tri2Color}"></div>
+      </div>
+    </div>
+    <div>
+      <p class="text-xs font-semibold text-gray-500 mb-2">Analogous (30°):</p>
+      <div class="flex gap-2">
+        <div class="flex-1 h-8 rounded-lg" style="background:${hex}"></div>
+        <div class="flex-1 h-8 rounded-lg" style="background:${analogColor}"></div>
+      </div>
+    </div>`;
+}
+
+function renderShadeVariations(fiberWeight, affinity) {
+  const container = document.getElementById('shadeVariations');
+  const owfLevels = [0.5, 1, 2, 4, 6, 8, 12];
+  const totalOwf = dyeComponents.reduce((s, d) => s + d.owf, 0);
+  if (totalOwf === 0 || dyeComponents.length === 0) { container.innerHTML = ''; return; }
+
+  container.innerHTML = `<div class="flex gap-1 items-end">
+    ${owfLevels.map(level => {
+      const scaleFactor = level / totalOwf;
+      const scaledDyes = dyeComponents.map(d => ({ ...d, owf: d.owf * scaleFactor }));
+      const origComponents = dyeComponents;
+      dyeComponents = scaledDyes;
+      const c = blendColors();
+      dyeComponents = origComponents;
+      return `<div class="flex-1 text-center">
+        <div class="rounded-md mb-1" style="background:${c};height:${Math.min(60, 20 + level * 5)}px"></div>
+        <p class="text-xs text-gray-400">${level}%</p>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function saveRecipe() {
+  const name = document.getElementById('recipeName').value.trim() || `Recipe ${recipes.length + 1}`;
+  const fiberWeight = parseFloat(document.getElementById('fiberWeight').value) || 100;
+  const blendedColor = blendColors();
+  const recipe = {
+    id: Date.now().toString(),
+    name,
+    color: blendedColor,
+    fiberWeight,
+    fiberType: document.getElementById('fiberType').value,
+    waterVolume: document.getElementById('waterVolume').value,
+    temperature: document.getElementById('temperature').value,
+    mordant: document.getElementById('mordant').value,
+    phAdjuster: document.getElementById('phAdjuster').value,
+    dyes: [...dyeComponents],
+    notes: document.getElementById('recipeNotes').value.trim(),
+    date: new Date().toISOString().split('T')[0]
+  };
+  recipes.unshift(recipe);
+  save();
+  renderSavedRecipes();
+  document.getElementById('recipeName').value = '';
+  document.getElementById('recipeNotes').value = '';
+}
+
+function loadRecipe(id) {
+  const recipe = recipes.find(r => r.id === id);
+  if (!recipe) return;
+  document.getElementById('recipeName').value = recipe.name;
+  document.getElementById('fiberWeight').value = recipe.fiberWeight;
+  document.getElementById('fiberType').value = recipe.fiberType;
+  document.getElementById('waterVolume').value = recipe.waterVolume;
+  document.getElementById('temperature').value = recipe.temperature;
+  document.getElementById('mordant').value = recipe.mordant;
+  document.getElementById('phAdjuster').value = recipe.phAdjuster;
+  dyeComponents = recipe.dyes.map(d => ({ ...d }));
+  renderDyeComponents();
+}
+
+function renderSavedRecipes() {
+  const container = document.getElementById('savedRecipes');
+  document.getElementById('recipeCount').textContent = `${recipes.length} recipe${recipes.length !== 1 ? 's' : ''}`;
+  if (recipes.length === 0) { container.innerHTML = '<p class="text-gray-400 text-sm italic">No saved recipes yet</p>'; return; }
+  container.innerHTML = recipes.map(r => `
+    <div class="border border-fuchsia-100 rounded-xl overflow-hidden hover:border-fuchsia-300 cursor-pointer" onclick="loadRecipe('${r.id}')">
+      <div class="h-6" style="background:${r.color}"></div>
+      <div class="p-3">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="font-semibold text-fuchsia-900 text-sm">${r.name}</p>
+            <p class="text-xs text-gray-400">${r.date} · ${r.fiberWeight}g ${r.fiberType}</p>
+            <div class="flex flex-wrap gap-1 mt-1">
+              ${r.dyes.map(d => `<span class="text-xs flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full" style="background:${d.color}"></span>${d.owf}% OWF</span>`).join('')}
+            </div>
+            ${r.notes ? `<p class="text-xs text-gray-500 mt-1 italic">${r.notes.substring(0,60)}...</p>` : ''}
+          </div>
+          <button onclick="event.stopPropagation();recipes=recipes.filter(x=>x.id!=='${r.id}');save();renderSavedRecipes()" class="text-gray-300 hover:text-red-400 shrink-0">✕</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+renderSavedRecipes();
+recalculate();
+</script>
+</body>
+</html>
